@@ -68,3 +68,46 @@ export const registerUser = async (req, res) => {
         });
     }
 };
+
+export const verifyUser = async (req, res) => {
+    const { token } = req.body;
+    try {
+        if (!token) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid token"
+            });
+        }
+        const userFromToken = await client.user.findFirst({
+            where: { verification_token: token }
+        });
+
+        if (!userFromToken) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid token"
+            });
+        }
+
+        await client.user.update({
+            where: {
+                email: userFromToken.email
+            },
+            data: {
+                is_verified: true,
+                verification_token: null
+            }
+        });
+        res.status(200).json({
+            status: "success",
+            message: "Account successfully verified, you can login now"
+        });
+    } catch (error) {
+        console.error('Verification error:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error. Please try again later.',
+        });
+    }
+
+};
