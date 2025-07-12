@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { send_mail } from "../config/nodemailer.config.js";
+import jwt from 'jsonwebtoken';
 
 const client = new PrismaClient();
 
@@ -110,4 +111,49 @@ export const verifyUser = async (req, res) => {
         });
     }
 
+};
+
+export const loginUser = async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await client.user.findFirst({
+        where: {
+            AND: {
+                email, is_verified: true
+            }
+        }
+    });
+
+    if (!user) {
+        return res.status(400).json({
+            status: "error",
+            message: "Invalid credentials"
+        });
+    }
+
+    const comparePassword = await bcrypt.compare(password, user.password);
+
+    if (!comparePassword) {
+        return res.status(400).json({
+            status: "error",
+            message: "Invalid credentials"
+        });
+    }
+
+    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
+        expiresIn: "24h"
+    });
+
+    res.cookie('token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24,
+    });
+
+    res.status(200).json({
+        status: "success",
+        message: "login successfully",
+        token
+    });
 };
