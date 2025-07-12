@@ -12,3 +12,22 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Role {
+  USER
+  ADMIN
+}
+model User {
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  role Role @default(USER)
+  profile_img String? // URL to profile image
+  is_verified Boolean @default(false)
+  verification_token String?
+  password_reset_token String?
+  password_reset_expiry DateTime?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
