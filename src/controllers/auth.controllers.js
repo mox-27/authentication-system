@@ -54,7 +54,7 @@ export const registerUser = async (req, res) => {
             },
         });
 
-        await send_mail(newUser.email, "Verify your account", `Click on below link to verify your account ${process.env.BASE_URL}/verify-email/${verification_token}`);
+        await send_mail(newUser.email, "Verify your account", `Click on below link to verify your account ${process.env.CLIENT_BASE_URL}/verify-email/${verification_token}`);
 
         return res.status(201).json({
             status: 'success',

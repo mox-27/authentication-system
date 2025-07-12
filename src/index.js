@@ -12,7 +12,7 @@ const app = express();
 
 app.use(cookieParser());
 app.use(cors({
-    origin: process.env.BASE_URL
+    origin: process.env.CLIENT_BASE_URL
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
