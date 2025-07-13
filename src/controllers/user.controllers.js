@@ -84,3 +84,38 @@ export const updateUserController = async (req, res) => {
         });
     }
 };
+
+export const deleteAccountController = async (req, res) => {
+    try {
+        const { id } = req.user;
+
+        const deletedAccount = await client.user.delete({
+            where: { id },
+        });
+
+        if (!deletedAccount) {
+            return res.status(400).json({
+                status: "error",
+                message: "User not found or unauthorized access.",
+            });
+        }
+
+        delete req.user;
+        res.clearCookie('token', {
+            httpOnly: true,
+            sameSite: 'Strict',
+            secure: process.env.NODE_ENV != 'development',
+        });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Account deleted successfully.",
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error. Please try again later.',
+        });
+    }
+};
