@@ -40,3 +40,47 @@ export const getProfile = async (req, res) => {
         });
     }
 };
+
+export const updateUserController = async (req, res) => {
+    try {
+        const { id } = req.user;
+        const { name, profile_img } = req.body;
+
+        const updatedUser = await client.user.update({
+            where: { id },
+            data: {
+                name, profile_img
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                profile_img: true,
+                is_verified: true,
+                created_at: true,
+                updated_at: true
+            }
+        });
+
+        if (!updatedUser) {
+            return res.status(401).json({
+                status: "error",
+                message: "User not found or unauthorized access.",
+            });
+        }
+
+        return res.status(200).json({
+            status: "success",
+            message: "Profile updated successfully.",
+            updatedUser,
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error. Please try again later.',
+        });
+    }
+};
