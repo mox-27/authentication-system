@@ -4,7 +4,10 @@ const client = new PrismaClient();
 
 export const getAllUsers = async (req, res) => {
     try {
-        const isVerified = req.query.verified !== true;
+        const isVerified = req.query.verified !== undefined
+            ? req.query.verified === 'true'
+            : true;
+
         const allUsers = await client.user.findMany({
             where: { is_verified: isVerified }, select: {
                 id: true,
@@ -12,6 +15,7 @@ export const getAllUsers = async (req, res) => {
                 email: true,
                 profile_img: true,
                 role: true,
+                is_verified: true,
                 created_at: true,
                 updated_at: true,
             }
