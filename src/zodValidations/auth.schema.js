@@ -12,3 +12,8 @@ export const loginUserSchema = z.object({
     email: z.email("Invalid email format"),
     password: z.string().min(6, "Password must be at least 6 characters"),
 });
+
+export const resetPasswordSchema = z.object({
+    password_reset_token: z.string("password reset token required"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+});

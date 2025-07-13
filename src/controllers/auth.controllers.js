@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { send_mail } from "../config/nodemailer.config.js";
 import jwt from 'jsonwebtoken';
+const TOKEN_EXPIRY_MINUTES = 60;
 
 const client = new PrismaClient();
 
@@ -164,4 +165,96 @@ export const loginUser = async (req, res) => {
             message: 'Internal server error. Please try again later.',
         });
     }
+};
+
+export const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.user;
+
+        const user = await client.user.findUnique({ where: { email } });
+
+        if (!user) {
+            return res.status(200).json({
+                status: "success",
+                message: "If that email is registered, a reset link has been sent.",
+            });
+        }
+
+        const passwordResetToken = crypto.randomBytes(32).toString('hex');
+        const expiry = new Date(Date.now() + TOKEN_EXPIRY_MINUTES * 60 * 1000);
+
+        await client.user.update({
+            where: { email },
+            data: {
+                password_reset_token: passwordResetToken,
+                password_reset_expiry: expiry
+            }
+        });
+
+        const resetLink = `${process.env.CLIENT_BASE_URL}/reset-password/${passwordResetToken}`;
+        const message = `
+            <p>You requested a password reset. Click the link below to reset it:</p>
+            <a href="${resetLink}">Reset your password</a>
+            <p>This link will expire in ${TOKEN_EXPIRY_MINUTES} minutes.</p>
+        `;
+        await send_mail(email, "Reset your passoword", "", message);
+
+        return res.status(200).json({
+            status: "success",
+            message: "If that email is registered, a reset link has been sent.",
+        });
+    } catch (error) {
+        console.error('Forgot passsword error:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error. Please try again later.',
+        });
+    }
+};
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { password: newPassword, password_reset_token: token } = req.body;
+
+        // Find user by token
+        const user = await client.user.findFirst({
+            where: { password_reset_token: token },
+        });
+
+        const tokenExpired = !user?.password_reset_expiry || user.password_reset_expiry < new Date();
+
+        if (!user || tokenExpired) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid or expired token.",
+            });
+        }
+
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        await client.user.update({
+            where: { id: user.id },
+            data: {
+                password: hashedPassword,
+                password_reset_expiry: null,
+                password_reset_token: null,
+            }
+        });
+
+        delete req.user;
+        res.clearCookie("token");
+
+        return res.status(200).json({
+            status: "success",
+            message: "Password has been successfully reset. Please log in again.",
+        });
+
+    } catch (error) {
+        console.error('Reset passsword error:', error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error. Please try again later.',
+        });
+    }
+
 };
