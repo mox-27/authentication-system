@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-// Controllers adn middlewares
+// Controllers and middlewares
 import { loginUser, registerUser, verifyUser, forgotPassword, resetPassword, logoutController } from "../controllers/auth.controllers.js";
 import { validate } from "../middlewares/validate.js";
 import { registerUserSchema, loginUserSchema, resetPasswordSchema } from '../zodValidations/auth.schema.js';
@@ -15,4 +15,4 @@ router.post('/forgot-password', protect, forgotPassword);
 router.post('/reset-password', protect, validate(resetPasswordSchema), resetPassword);
 router.post('/logout', protect, logoutController);
 
-export default router;
+export default router;  

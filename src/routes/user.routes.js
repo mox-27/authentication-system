@@ -2,7 +2,7 @@ import { Router } from "express";
 
 const router = Router();
 
-// Controllers adn middlewares
+// Controllers and middlewares
 import { getProfile } from "../controllers/user.controllers.js";
 import { protect } from "../middlewares/protect.js";
 
