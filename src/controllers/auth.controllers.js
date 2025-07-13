@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { send_mail } from "../config/nodemailer.config.js";
 import jwt from 'jsonwebtoken';
 const TOKEN_EXPIRY_MINUTES = 60;
+const ACCOUNT_VERIFY_EXPIRY = 60;
 
 const client = new PrismaClient();
 
@@ -73,46 +74,57 @@ export const registerUser = async (req, res) => {
 
 export const verifyUser = async (req, res) => {
     const { token } = req.body;
+
     try {
-        if (!token) {
-            return res.status(400).json({
-                status: "error",
-                message: "Invalid token"
-            });
-        }
-        const userFromToken = await client.user.findFirst({
-            where: { verification_token: token }
+        // Lookup user by verification token
+        const user = await client.user.findFirst({
+            where: { verification_token: token },
         });
 
-        if (!userFromToken) {
+        if (!user) {
             return res.status(400).json({
                 status: "error",
-                message: "Invalid token"
+                message: "Invalid or expired verification token.",
+            });
+        }
+
+        // Calculate expiry time based on created_at + expiry window
+        const tokenCreatedAt = new Date(user.created_at);
+        const tokenExpiryTime = new Date(tokenCreatedAt.getTime() + TOKEN_EXPIRY_MINUTES * 60 * 1000);
+
+        if (new Date() > tokenExpiryTime) {
+            await client.user.delete({
+                where: { id: user.id },
+            });
+
+            return res.status(400).json({
+                status: "error",
+                message: "Verification token has expired. Please sign up again.",
             });
         }
 
         await client.user.update({
-            where: {
-                email: userFromToken.email
-            },
+            where: { id: user.id },
             data: {
                 is_verified: true,
-                verification_token: null
-            }
+                verification_token: null,
+            },
         });
-        res.status(200).json({
+
+        return res.status(200).json({
             status: "success",
-            message: "Account successfully verified, you can login now"
+            message: "Account verified successfully. You can now log in.",
         });
     } catch (error) {
-        console.error('Verification error:', error);
+        console.error('Error verifying user:', error);
+
         return res.status(500).json({
-            status: 'error',
-            message: 'Internal server error. Please try again later.',
+            status: "error",
+            message: "Something went wrong. Please try again later.",
         });
     }
-
 };
+
 
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
