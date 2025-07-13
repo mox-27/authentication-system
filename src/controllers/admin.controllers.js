@@ -45,10 +45,10 @@ export const deleteAnyUser = async (req, res) => {
             });
         }
 
-        if (user.role === 'ADMIN') {
+        if (user.email === process.env.SUPER_ADMIN_EMAIL) {
             return res.status(403).json({
-                status: "error",
-                message: "Cannot delete a superadmin account.",
+                status: 'error',
+                message: 'Cannot delete a SUPERADMIN.',
             });
         }
 
@@ -59,6 +59,48 @@ export const deleteAnyUser = async (req, res) => {
         return res.status(200).json({
             status: "success",
             message: `User with email ${user.email} deleted successfully.`,
+        });
+
+    } catch (error) {
+        console.error("Error deleting user:", error);
+        return res.status(500).json({
+            status: 'error',
+            message: 'Internal server error. Please try again later.',
+        });
+    }
+};
+
+export const updateUserRole = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body;
+        const user = await client.user.findUnique({
+            where: { id },
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                status: "error",
+                message: `User with id ${id} not found.`,
+            });
+        }
+
+        if (user.email === process.env.SUPER_ADMIN_EMAIL) {
+            return res.status(403).json({
+                status: 'error',
+                message: 'Cannot modify role of a SUPERADMIN.',
+            });
+        }
+
+        await client.user.update({
+            where: { id },
+            data: {
+                role: role.toUpperCase()
+            }
+        });
+        return res.status(200).json({
+            status: "success",
+            message: `User with email ${user.email} is now ${role}.`,
         });
 
     } catch (error) {
