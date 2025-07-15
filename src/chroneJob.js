@@ -1,8 +1,7 @@
 import cron from 'node-cron';
-import { PrismaClient } from '@prisma/client';
+import client from "./lib/prisma.js";
 const ACCOUNT_VERIFY_EXPIRY = 60;
 
-const client = new PrismaClient();
 const deleteExpiredUnverifiedUsers = async () => {
     const expiryDate = new Date(Date.now() - ACCOUNT_VERIFY_EXPIRY * 60 * 1000);
     try {

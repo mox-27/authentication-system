@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import client from "../lib/prisma.js";
 import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { send_mail } from "../config/nodemailer.config.js";
@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 const TOKEN_EXPIRY_MINUTES = 60;
 const ACCOUNT_VERIFY_EXPIRY = 60;
 
-const client = new PrismaClient();
+
 
 export const registerUser = async (req, res) => {
     const { name, email, password, role } = req.body;
